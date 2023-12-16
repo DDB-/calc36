@@ -1,10 +1,12 @@
 from exceptions import InvalidPipsException, MissingCostException
 
 class Unit:
-    def __init__(self, attack, defense, cost=None, name=None, 
-            unit_class=None, modifiers=None, health=1, nation=None):
+    def __init__(self, attack, defense, cost=None, name=None, unit_class=None,
+            modifiers=None, nation=None, movement=1):
         self.attack = attack
         self.defense = defense
+
+        # TODO: Move validation into its own method at some point
         if self.attack > 12 or self.attack < 0:
             raise InvalidPipsException("Attack pips must be between 0 and 12")
 
@@ -15,31 +17,41 @@ class Unit:
         self.name = name
         self.unit_class = unit_class
         self.modifiers = modifiers
-        self.health = health
         self.nation = nation
+        self.movement = movement
+        self.health = 1
         self.blitz = None
         self.first_strike = False
         self.air_superiority = False
         self.one_round = None
         self.eligible_casualties = None
         self.selection_priority = 0
+        self.bombard = None
 
     def __eq__(self, other):
         return self.name == other.name
 
     def get_attack(self, terrain, combat_round):
+        local_attack = self.attack + self.health_adjustment()
         if terrain is not None:
-            return max(self.attack + terrain.get_modifier(unit=self, 
+            return max(local_attack + terrain.get_modifier(unit=self,
                     combat_round=combat_round, side="Attacker"), 1)
 
         return self.attack
 
     def get_defense(self, terrain, combat_round):
+        local_defense = self.defense + self.health_adjustment()
         if terrain is not None:
-            return max(self.defense + terrain.get_modifier(unit=self, 
+            return max(local_defense + terrain.get_modifier(unit=self,
                     combat_round=combat_round, side="Defense"), 1)
 
-        return self.defense
+        return local_defense
+
+    def health_adjustment(self):
+        return 0
+
+    def health_movement_adjustment(self):
+        return 0
 
     def get_total_pips(self):
         return self.defense + self.attack
@@ -58,7 +70,10 @@ class Unit:
 
     def get_cost(self):
         if self.cost is not None:
-            return self.cost
+            if type(self.cost) is int:
+                return self.cost
+            elif type(self.cost) is list:
+                return sum(self.cost)
 
         raise MissingCostException("Only specific Unit types have a cost, and this is a " +
                 self.__class__.__name__)
@@ -78,27 +93,27 @@ class Unit:
 #   * Boat (anything in the water)
 #   * Plane (anything in the air)
 class InfantryClass(Unit):
-    def __init__(self, attack, defense, name=None, cost=None, nation=None):
+    def __init__(self, attack, defense, name=None, cost=None, nation=None, movement=1):
         super().__init__(attack=attack, defense=defense, unit_class="Infantry", 
-                name=name, cost=cost, nation=nation)
+                name=name, cost=cost, nation=nation, movement=movement)
 
 class VehicleClass(Unit):
-    def __init__(self, attack, defense, name=None, cost=None, nation=None):
+    def __init__(self, attack, defense, name=None, cost=None, nation=None, movement=1):
         super().__init__(attack=attack, defense=defense, unit_class="Vehicle",
-                name=name, cost=cost, nation=nation)
+                name=name, cost=cost, nation=nation, movement=movement)
 
 class ArtilleryClass(Unit):
-    def __init__(self, attack, defense, name=None, cost=None, nation=None):
+    def __init__(self, attack, defense, name=None, cost=None, nation=None, movement=1):
         super().__init__(attack=attack, defense=defense, unit_class="Artillery",
-                name=name, cost=cost, nation=nation)
+                name=name, cost=cost, nation=nation, movement=movement)
         self.first_strike = True
 
 class BoatClass(Unit):
-    def __init__(self, attack, defense, name=None, cost=None, health=1, nation=None):
+    def __init__(self, attack, defense, name=None, cost=None, nation=None, movement=1):
         super().__init__(attack=attack, defense=defense, unit_class="Boat",
-                name=name, cost=cost, health=health, nation=nation)
+                name=name, cost=cost, nation=nation, movement=movement)
 
 class PlaneClass(Unit):
-    def __init__(self, attack, defense, name=None, cost=None, nation=None):
+    def __init__(self, attack, defense, name=None, cost=None, nation=None, movement=1):
         super().__init__(attack=attack, defense=defense, unit_class="Plane",
-                name=name, cost=cost, nation=nation)
+                name=name, cost=cost, nation=nation, movement=movement)
