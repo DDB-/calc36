@@ -30,17 +30,17 @@ class TankDestroyer(VehicleClass):
         super().__init__(attack=3, defense=4, name="Tank Destroyer", cost=5)
 
     def target_select(self, roll, side, pips):
-        if roll =< min(pips, 3):
+        if roll <= min(pips, 3):
             return TargetSelection(target_type="Unit Class", targets=["Vehicle"])
 
-class LightArmour(VehicleClass):
+class LightTank(VehicleClass):
     def __init__(self):
-        super().__init__(attack=3, defense=1, name="Light Armour", cost=4)
+        super().__init__(attack=3, defense=1, name="Light Tank", cost=4)
         self.blitz = Blitz(ratio=None)
 
-class MediumArmour(VehicleClass):
+class MediumTank(VehicleClass):
     def __init__(self):
-        super().__init__(attack=6, defense=5, name="Medium Armour", cost=6)
+        super().__init__(attack=6, defense=5, name="Medium Tank", cost=6)
         self.blitz = Blitz(ratio=None)
 
 class T34(VehicleClass):
@@ -52,9 +52,9 @@ class T34(VehicleClass):
         if roll == 1:
             return TargetSelection(target_type="Unit Class", targets=["Vehicle"])
 
-class HeavyArmour(VehicleClass):
+class HeavyTank(VehicleClass):
     def __init__(self):
-        super().__init__(attack=8, defense=7, name="Heavy Armour", cost=7)
+        super().__init__(attack=8, defense=7, name="Heavy Tank", cost=7)
         self.blitz = Blitz(ratio=None)
 
     def target_select(self, roll, side, pips):
@@ -67,5 +67,5 @@ class TigerI(VehicleClass):
         self.blitz = Blitz(ratio=None)
 
     def target_select(self, roll, side, pips):
-        if roll =< 3:
+        if roll <= 3:
             return TargetSelection(target_type="Unit Class", targets=["Vehicle"])

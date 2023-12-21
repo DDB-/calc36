@@ -35,7 +35,7 @@ defense.add_unit(infantry.Infantry())
 defense.add_unit(infantry.Infantry())
 defense.apply_nation(nation="CCP")
 
-terrain = Mountain()
+terrains = [Mountain()]
 
-battle = Battle(attacker=army, defender=defense, terrain=terrain)
+battle = Battle(attacker=army, defender=defense, terrains=terrains)
 battle.do_battle()

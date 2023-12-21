@@ -31,21 +31,42 @@ class Unit:
     def __eq__(self, other):
         return self.name == other.name
 
-    def get_attack(self, terrain, combat_round):
+    def get_attack(self, terrains=[], combat_round=0):
+        # First account for damage taken if it has health and still alive
         local_attack = self.attack + self.health_adjustment()
-        if terrain is not None:
-            return max(local_attack + terrain.get_modifier(unit=self,
-                    combat_round=combat_round, side="Attacker"), 1)
 
-        return self.attack
+        # Next account for terrains, taking the best bonus
+        # available, and the worst negative, and combining for final adjustment
+        terrain_mod, tmax, tmin = 0, 0, 0
+        if len(terrains) > 0:
+            terrain_modifiers = [terrain.get_modifier(unit=self, combat_round=combat_round,
+                side="Attacker") for terrain in terrains]
+            tmax = max(0, max(terrain_modifiers))
+            tmin = min(0, min(terrain_modifiers))
+            terrain_mod = tmax - tmin
 
-    def get_defense(self, terrain, combat_round):
+        return max(local_attack + terrain_mod, 1)
+
+    def get_defense(self, terrains=[], facilities=[], combat_round=0):
+        # First account for damage taken if it has health and still alive
         local_defense = self.defense + self.health_adjustment()
-        if terrain is not None:
-            return max(local_defense + terrain.get_modifier(unit=self,
-                    combat_round=combat_round, side="Defense"), 1)
 
-        return local_defense
+        # Next account for terrains, taking the best bonus
+        # available, and the worst negative, and combining for final adjustment
+        terrain_mod, tmax, tmin = 0, 0, 0
+        if len(terrains) > 0:
+            terrain_modifiers = [terrain.get_modifier(unit=self, combat_round=combat_round,
+                side="Defender") for terrain in terrains]
+            tmax = max(0, max(terrain_modifiers))
+            tmin = min(0, min(terrain_modifiers))
+
+        # Next account for facilities if they help at all, taking best combing with terrain
+        if len(facilities) > 0:
+            facility_modifiers = [facility.get_defense_bonus(unit=self, combat_round=combat_round)]
+            tmax = max(tmax, max(facility_modifiers))
+
+        terrain_mod = tmax - tmin
+        return max(local_defense + terrain_mod, 1)
 
     def health_adjustment(self):
         return 0
@@ -55,18 +76,6 @@ class Unit:
 
     def get_total_pips(self):
         return self.defense + self.attack
-
-    def get_name(self):
-        if self.name is not None:
-            return self.name
-
-        return "Base Class: " + self.__class__.__name__
-
-    def get_unit_class(self):
-        if self.unit_class is not None:
-            return self.unit_class
-
-        return "Base Unit (Did you return this in error?)"
 
     def get_cost(self):
         if self.cost is not None:
@@ -78,13 +87,20 @@ class Unit:
         raise MissingCostException("Only specific Unit types have a cost, and this is a " +
                 self.__class__.__name__)
 
+    def get_weight(self, side, terrains=[], facilities=[]):
+        weight = self.get_cost()
+        if side == "Attacker":
+            weight += self.get_attack(terrains=terrains)
+        else:
+            weight += self.get_defense(terrains=terrains, facilities=facilties)
+
+        return weight
+
     def does_retreat(self, side, roll):
         return False
 
     def target_select(self, roll, side, pips):
         return None
-
-
 
 # Four main types of units:
 #   * Infantry (anything that walks around)

@@ -1,0 +1,11 @@
+[project]
+name = "calc36"
+version = "0.0.1"
+description = "A calculator for Global War 1936"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
