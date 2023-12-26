@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% from "_formhelpers.html" import render_field %}
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global War 1936 Calculator</title>
+</head>
+<body>
+    <h1>Global War 1936 Calculator</h1>
+    <form method="POST" action="">
+        {{ form.csrf_token }}
+
+        {{ render_field(form.attacker) }}
+        {{ render_field(form.attacker_army) }}
+        <button id='add-attacker' name='add-attacker'>Add Attacker</button>
+        <br/>
+
+        <b>{{ form.defender.label }}</b>
+        {{ form.defender }}
+        {{ form.defender_army }}
+        <button id='add-defender' name='add-defender'>Add Defender</button>
+        <br/>
+
+        <button type="submit">Calculate</button>
+    </form>
+</body>
+</html>
+
+<script type="text/javascript" src="/static/selector.js"></script>
+<script>
+    window.onload = function() {
+        let addAttackerButton = document.getElementById('add-attacker');
+        addAttackerButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            addUnit('attacker');
+        });
+
+        let addDefenderButton = document.getElementById('add-defender');
+        addDefenderButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            addUnit('defender');
+        });
+    }
+</script>

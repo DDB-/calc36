@@ -71,7 +71,7 @@ class Battle:
             self.total_retreats.extend(self.attacker_retreats)
             self.bprint("~~~~~~~~~~~~~~~~~~~~~~~~~~")
             for unit in self.attacker_retreats:
-                self.bprint("Attacker retreats: " + unit.get_name())
+                self.bprint("Attacker retreats: " + unit.name)
                 self.attacker.units.remove(unit)
 
         # Always reset the retreats each round no matter what to be consistent
@@ -81,13 +81,13 @@ class Battle:
         if (self.attacker_losses > 0):
             self.bprint("~~~~~~~~~~~~~~~~~~~~~~~~~~")
             for unit in self.attacker.units[0:self.attacker_losses]:
-                self.bprint("Attacker loses: " + unit.get_name())
+                self.bprint("Attacker loses: " + unit.name)
             self.attacker.units = self.attacker.units[self.attacker_losses:]
 
         if (self.defender_losses > 0):
             self.bprint("~~~~~~~~~~~~~~~~~~~~~~~~~~")
             for unit in self.defender.units[0:self.defender_losses]:
-                self.bprint("Defender loses: " + unit.get_name())
+                self.bprint("Defender loses: " + unit.name)
             self.defender.units = self.defender.units[self.defender_losses:]
 
     def roll_unit(self, unit, side, facilities):
@@ -134,7 +134,7 @@ class Battle:
                 self.attacker_retreats.append(unit)
                 self.attacker_casualties.retreats.append(unit)
 
-        self.bprint(side + " " + unit.get_name() + word + "with a roll of " + str(roll) +
+        self.bprint(side + " " + unit.name + word + "with a roll of " + str(roll) +
                 " (needed " + str(pips) + " or less to hit)")
 
     def cleanup(self):

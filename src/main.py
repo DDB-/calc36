@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from view.models import BattleSimulator
 import models.infantry as infantry
 from models.army import Army
 from models.terrain import Mountain
