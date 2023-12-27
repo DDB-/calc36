@@ -1,5 +1,5 @@
 class ArmyResolver:
-    def __init__(self, casualties, side, army, terrains, debug=False):
+    def __init__(self, casualties, side, army, terrains=[], debug=False):
         self.casualties = casualties
         self.side = side
         self.army = army
@@ -13,42 +13,72 @@ class ArmyResolver:
 
     # This method will remove losses using the specified strategy
     # return - remaining army
-    def remove_losses():
-        self.check_for_losses()
-        self.handle_retreats()
-        self.handle_strict_targets()
-        self.handle_non_strict_targets()
-        self.handle_standard_hits()
-        return army
+    def remove_losses(self):
+        state = self.check_for_losses()
+        if state == 0:
+            self.handle_retreats()
+            self.handle_strict_targets()
+            self.handle_non_strict_targets()
+            self.handle_standard_hits()
+            self.do_removal()
+        elif state == -1:
+            self.bprint("No hits this round")
+        elif state == 1:
+            self.bprint("All units destroyed")
+
+        return self.army
+
+    def do_removal(self):
+        for unit in self.losses:
+            self.bprint("{} ({}) is killed".format(self.side, unit.name))
+            self.army.units.remove(unit)
 
     def check_for_losses(self):
         # If no hits, return early
         if (self.casualties.hits + len(self.casualties.targets) +
                 len(self.casualties.specific) + len(self.casualties.retreats)) == 0:
-            return
+            return -1
 
         # If the total health available is less than the number of total hits, the army is done
         if sum([x.health for x in self.army.units]) <= (self.casualties.hits + \
                 len([x for x in self.casualties.targets if x.strict is False]) + \
                 len([x for x in self.casualties.specific if x.strict is False]) + \
                 len(self.casualties.retreats)):
+            self.army.losses = self.army.units
             self.army.units = []
-            return 
+            return 1
+
+        return 0
 
     # This returns units who have > 1 max health in order of how damaged they are
     def get_multi_health_units(self):
-        return sorted([x for x in self.army.units if x.name in ["Battleship", 
-            "Heavy Battleship", "Fleet Carrier"]], key=lambda x: x.health)
+        return sorted([x for x in self.army.units if x.health > 1], reverse=True, 
+            key=lambda x: (x.health, -x.get_cost()))
 
     def get_single_health_units(self):
-        return self.cost_sort(units=[x for x in self.army.units if x.health == 1])
+        return sorted([x for x in self.army.units if x.health == 1], reverse=True,
+            key=lambda x: (x.get_weight(side=self.side, terrains=self.terrains)))
 
     # Sorts units so that the most expensive is first in the list
     def cost_sort(self, units):
         return sorted(units, key=lambda x: x.get_cost(), reverse=True)
 
     def handle_standard_hits(self):
-        pass
+        if self.casualties.hits == 0:
+            return
+
+        multi = self.get_multi_health_units()
+        while len(multi) > 0 and self.casualties.hits > 0:
+            multi[0].health -= 1
+            self.casualties.hits -= 1
+            multi = self.get_multi_health_units()
+
+        if self.casualties.hits == 0:
+            return
+
+        # This is sorted so that the worst units are at the end
+        units = self.get_single_health_units()
+        self.losses.extend(units[-self.casualties.hits:])
 
     ### Target Selection
     # 1. Handle attacker picked target selection
@@ -58,7 +88,7 @@ class ArmyResolver:
     def handle_non_strict_targets(self):
         targets = [x for x in self.casualties.targets if not x.strict]
         if len(targets) == 0:
-            pass
+            return
 
         # Check to see if enough target selects exist to kill a multi-health
         # If they do, kill a multi-health unit, those are harder to do

@@ -92,7 +92,13 @@ class Unit:
         if side == "Attacker":
             weight += self.get_attack(terrains=terrains)
         else:
-            weight += self.get_defense(terrains=terrains, facilities=facilties)
+            weight += self.get_defense(terrains=terrains, facilities=facilities)
+
+        if self.first_strike:
+            weight += 1
+
+        if self.blitz is not None:
+            weight += 1
 
         return weight
 
