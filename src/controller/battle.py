@@ -9,7 +9,7 @@ from models.stats import CombatStats, CombatResult
 from models.terrain import Terrain
 
 class Battle:
-    def __init__(self, attacker, defender, terrains=[]):
+    def __init__(self, attacker, defender, terrains=[], log=False):
         if attacker is None or len(attacker.units) < 1:
             raise InvalidArmyException("Attacking army is None or contains no units!")
         if defender is None or len(defender.units) < 1:
@@ -17,19 +17,19 @@ class Battle:
 
         self.terrains = terrains
         self.stats = CombatStats()
-        self.log = False
+        self.log = log
+        self.runs = 1 if log else 10000
 
         self.starting_attacker = attacker
         self.starting_defender = defender
 
 
     def do_battle(self):
-        for i in range(1,10001):
+        for i in range(0,self.runs):
             self.setup()
             while not self.finished():
                 self.roll_dice()
-                self.handle_retreats()
-                self.handle_losses()
+                self.handle_casualties()
                 self.advance_round()
                 self.cleanup()
 
@@ -136,6 +136,15 @@ class Battle:
 
         self.bprint(side + " " + unit.name + word + "with a roll of " + str(roll) +
                 " (needed " + str(pips) + " or less to hit)")
+
+    def handle_casualties(self):
+        defense_resolver = ArmyResolver(casualties=self.defender_casualties,
+            side='Defender', army=self.defender, terrains=self.terrains)
+        attack_resolver = ArmyResolver(casualties=self.attacker_casualties,
+            side='Attack', army=self.attacker, terrains=self.terrains)
+
+        self.attacker = attack_resolver.remove_losses()
+        self.defender = defense_resolver.remove_losses()
 
     def cleanup(self):
         self.attacker_losses = 0

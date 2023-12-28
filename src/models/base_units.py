@@ -43,7 +43,7 @@ class Unit:
                 side="Attacker") for terrain in terrains]
             tmax = max(0, max(terrain_modifiers))
             tmin = min(0, min(terrain_modifiers))
-            terrain_mod = tmax - tmin
+            terrain_mod = tmax + tmin
 
         return max(local_attack + terrain_mod, 1)
 
@@ -65,7 +65,7 @@ class Unit:
             facility_modifiers = [facility.get_defense_bonus(unit=self, combat_round=combat_round)]
             tmax = max(tmax, max(facility_modifiers))
 
-        terrain_mod = tmax - tmin
+        terrain_mod = tmax + tmin
         return max(local_defense + terrain_mod, 1)
 
     def health_adjustment(self):

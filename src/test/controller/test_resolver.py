@@ -1,6 +1,6 @@
 from controller.resolver import ArmyResolver
 from models.army import Army
-from models.battle import Casualties
+from models.battle import Casualties, TargetSelection
 
 import models.artillery as artillery
 import models.boat as boat
@@ -43,7 +43,7 @@ def test_single_hit_removed():
     # One unit should be removed and it should be the Militia
     assert len(new_army.units) == 2
     assert new_army.units == [infantry.Infantry(), infantry.MountainInfantry()]
-    assert ar.losses == [infantry.Militia()]
+    assert ar.total_losses == [infantry.Militia()]
 
 def test_multiple_hits_removed():
     units = [infantry.Infantry(), infantry.Infantry(), infantry.Militia(), 
@@ -56,7 +56,7 @@ def test_multiple_hits_removed():
     new_army = ar.remove_losses()
     assert len(new_army.units) == 1
     assert new_army.units == [infantry.MountainInfantry()]
-    assert ar.cost_sort(units=ar.losses) == \
+    assert ar.cost_sort(units=ar.total_losses) == \
         ar.cost_sort(units=[infantry.Militia(), infantry.Infantry(), infantry.Infantry()])
 
 def test_single_hit_with_multi_health_unit():
@@ -68,7 +68,7 @@ def test_single_hit_with_multi_health_unit():
     ar = ArmyResolver(casualties=casualties, side='Defender', army=army, terrains=[])
     army = ar.remove_losses()
     assert len(army.units) == 3
-    assert len(ar.losses) == 0
+    assert len(ar.total_losses) == 0
     assert army.units[2].health == 1
     assert army.units[2].name == "Battleship"
 
@@ -83,7 +83,7 @@ def test_multi_hit_multi_health_units():
     army = ar.remove_losses()
     # No losses, as with 3 hits, the HB should take 1, FC takes 1, and BS takes 1
     assert len(army.units) == 5
-    assert len(ar.losses) == 0
+    assert len(ar.total_losses) == 0
     assert army.units[2].health == 1
     assert army.units[2].name == "Battleship"
     assert army.units[3].health == 2
@@ -100,7 +100,7 @@ def test_multi_hit_multi_health_casualties():
     ar = ArmyResolver(casualties=casualties, side='Defender', army=army, terrains=[])
     army = ar.remove_losses()
     assert len(army.units) == 2
-    assert len(ar.losses) == 1
+    assert len(ar.total_losses) == 1
     assert army.units[1].health == 1
     assert army.units[1].name == "Battleship"
 
@@ -116,9 +116,39 @@ def test_complex_army_resolve_normal_hits():
     ar = ArmyResolver(casualties=casualties, side='Defender', army=army, terrains=[])
     army = ar.remove_losses()
     assert len(army.units) == 4
-    assert len(ar.losses) == 4
+    assert len(ar.total_losses) == 4
 
     expected_remaining = [artillery.Artillery(), infantry.MountainInfantry(), 
         vehicles.MediumTank(), plane.Fighter()]
     assert sorted(army.units, key=lambda x: x.name) == \
         sorted(expected_remaining, key=lambda x: x.name)
+
+###############################
+##### Target Selections #######
+###############################
+
+def test_basic_target_selection():
+    units = [infantry.Infantry(), infantry.Militia(), infantry.MountainInfantry()]
+    army = Army(units=units)
+    casualties = Casualties()
+    casualties.add_target(target=TargetSelection(target_type="Unit Class", targets=["Infantry"]))
+
+    ar = ArmyResolver(casualties=casualties, side='Defender', army=army, terrains=[])
+    army = ar.remove_losses()
+    assert len(army.units) == 2
+    assert len(ar.total_losses) == 1
+    assert army.units == [infantry.Infantry(), infantry.Militia()]
+    assert ar.total_losses == [infantry.MountainInfantry()]
+
+def test_basic_downgrade():
+    units = [infantry.Infantry(), infantry.Militia(), infantry.MountainInfantry()]
+    army = Army(units=units)
+    casualties = Casualties()
+    casualties.add_target(target=TargetSelection(target_type="Unit Class", targets=["Vehicle"]))
+
+    ar = ArmyResolver(casualties=casualties, side='Defender', army=army, terrains=[])
+    army = ar.remove_losses()
+    assert len(army.units) == 2
+    assert len(ar.total_losses) == 1
+    assert army.units == [infantry.Infantry(), infantry.MountainInfantry()]
+    assert ar.total_losses == [infantry.Militia()]

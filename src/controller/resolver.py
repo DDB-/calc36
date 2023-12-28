@@ -6,6 +6,7 @@ class ArmyResolver:
         self.terrains = terrains
         self.debug = debug
         self.losses = []
+        self.total_losses = []
 
     def bprint(self, string):
         if self.debug:
@@ -20,7 +21,6 @@ class ArmyResolver:
             self.handle_strict_targets()
             self.handle_non_strict_targets()
             self.handle_standard_hits()
-            self.do_removal()
         elif state == -1:
             self.bprint("No hits this round")
         elif state == 1:
@@ -32,6 +32,10 @@ class ArmyResolver:
         for unit in self.losses:
             self.bprint("{} ({}) is killed".format(self.side, unit.name))
             self.army.units.remove(unit)
+
+        # Record total losses and then reset -- allows this function to be called multiple times
+        self.total_losses.extend(self.losses)
+        self.losses = []
 
     def check_for_losses(self):
         # If no hits, return early
@@ -79,6 +83,7 @@ class ArmyResolver:
         # This is sorted so that the worst units are at the end
         units = self.get_single_health_units()
         self.losses.extend(units[-self.casualties.hits:])
+        self.do_removal()
 
     ### Target Selection
     # 1. Handle attacker picked target selection
@@ -92,16 +97,29 @@ class ArmyResolver:
 
         # Check to see if enough target selects exist to kill a multi-health
         # If they do, kill a multi-health unit, those are harder to do
-        multi_health_units = self.get_multi_health_units()
-        if len(multi_health_units) > 0 and len(targets) > 1:
-            for mhu in multi_health_units:
-                applies = [x for x in targets if x.applies(unit=mhu)]
-                if len(applies) >= mhu.health:
-                    self.losses.append(mhu)
-                    for t in applies[:mhu.health]:
-                        self.casualties.targets.remove(t)
+        #multi_health_units = self.get_multi_health_units()
+        #if len(multi_health_units) > 0 and len(targets) > 1:
+        #    for mhu in multi_health_units:
+        #        applies = [x for x in targets if x.applies(unit=mhu)]
+        #        if len(applies) >= mhu.health:
+        #            self.losses.append(mhu)
+        #            for t in applies[:mhu.health]:
+        #                self.casualties.targets.remove(t)
 
-
+        # Handle target selections one at a time, and do the removal immediately
+        for target in targets:
+            applies = sorted([x for x in self.army.units if target.applies(unit=x)], reverse=True,
+                key=lambda x: (x.get_weight(side=self.side, terrains=self.terrains)))
+            if len(applies) > 0:
+                # True target selects hit highest weight else specific hits target lowest weight
+                index = 0 if target.expensive else -1
+                self.losses.append(applies[index])
+                # Immediately process the removal so that the next applies doesn't consider it
+                self.do_removal()
+            else:
+                # If there are no valid targets, it gets downgraded to a normal hit
+                # Normal hits are handled last before final cleanup
+                self.casualties.hits += 1
 
     def handle_strict_targets(self):
         pass

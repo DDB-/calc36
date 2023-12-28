@@ -4,6 +4,8 @@ import models.infantry as infantry
 import models.plane as plane
 import models.vehicles as vehicles
 
+import models.terrain as terrain
+
 def test_infantry():
     inf = infantry.Infantry()
     assert inf.get_cost() == 3
@@ -69,3 +71,11 @@ def test_boat():
     assert battleship.bombard == 4
     assert battleship.first_strike == False
     assert battleship.air_superiority == False
+
+def test_terrain():
+    inf = infantry.Infantry()
+    assert inf.get_attack() == 2
+    assert inf.get_attack(terrains=[terrain.Mountain()]) == 1
+
+    assert inf.get_defense() == 4
+    assert inf.get_defense(terrains=[terrain.Mountain()]) == 4

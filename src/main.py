@@ -38,5 +38,5 @@ defense.apply_nation(nation="CCP")
 
 terrains = [Mountain()]
 
-battle = Battle(attacker=army, defender=defense, terrains=terrains)
+battle = Battle(attacker=army, defender=defense, terrains=terrains, log=False)
 battle.do_battle()
